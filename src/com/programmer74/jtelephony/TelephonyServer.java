@@ -1,5 +1,6 @@
 package com.programmer74.jtelephony;
 
+import javax.xml.crypto.Data;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -16,6 +17,8 @@ class ClientInfo {
     public InetAddress ip;
     public int realPort;
     public String nickname;
+    public boolean isWaitingCall = false;
+    public boolean hasAcceptedCall = false;
 
     public ClientInfo (String nickname, InetAddress ip, int port)
     {
@@ -58,7 +61,7 @@ public class TelephonyServer {
                 //Communication based on text commands goes here
                 try {
                     String s = inputs.readUTF();
-                    ClientInfo cli = clients.get(clientSocket.getInetAddress());
+                    ClientInfo cli = clients.get(clientSocket.getInetAddress().toString() );
 
                     //System.out.println(">" + s + "<");
                     if (s.equals("list")) {
@@ -76,12 +79,70 @@ public class TelephonyServer {
                         outputs.writeUTF("ok");
                         continue;
                     }
+                    if (s.equals("y") && cli.isWaitingCall) {
+                        cli.hasAcceptedCall = true;
+                        cli.isWaitingCall = false;
+                        outputs.writeUTF("call accepted");
+                        continue;
+                    }
+                    if (s.equals("n") && cli.isWaitingCall) {
+                        cli.hasAcceptedCall = false;
+                        cli.isWaitingCall = false;
+                        outputs.writeUTF("call not accepted");
+                        continue;
+                    }
+
+                    if (s.matches("call [^ ]+")) {
+                        String callToNick = s.split(" ")[1];
+                        ClientInfo callTo = null;
+                        for (ClientInfo cl : clients.values()) {
+                           if (cl.nickname.equals(callToNick)) callTo = cl;
+                        }
+                        //no client with that nick
+                        if (callTo == null) {
+                            outputs.writeUTF("who's that?");
+                            continue;
+                        }
+                        //ask for call
+                        cli.isWaitingCall = true;
+                        cli.hasAcceptedCall = false;
+                        //cli.callHash = (cli.ip.toString() + callTo.ip.toString()).hashCode();
+                        callTo.isWaitingCall = true;
+                        callTo.hasAcceptedCall = false;
+                        //actual asking
+                        askForPhoneCall(cli, callTo);
+                        //now waiting till callTo accepts it or not (or timeout?)
+                        long start_time = System.nanoTime();
+                        long end_time;
+                        while (callTo.isWaitingCall) {
+                            end_time = System.nanoTime();
+                            double difference = (end_time - start_time) / 1e6;
+                            if (difference > 30000) break;
+                            if (callTo.isWaitingCall == false) break;
+                            try {
+                                Thread.sleep(100);
+                            } catch (Exception ex) {};
+                        }
+                        if (callTo.hasAcceptedCall) {
+                            outputs.writeUTF("call ok");
+                            sendUDPString(cli, "callstart");
+                            sendUDPString(callTo, "callstart");
+
+                        } else {
+                            outputs.writeUTF("call fail");
+                        }
+                        cli.isWaitingCall = false;
+                        cli.hasAcceptedCall = false;
+                        callTo.isWaitingCall = false;
+                        callTo.hasAcceptedCall = false;
+                        continue;
+                    }
                     outputs.writeUTF("what?");
                 } catch (Exception ex) {
                     System.out.println(">>Client on " + ip + " disconnected.");
                     System.out.println(ex.toString());
                     isConnected = false;
-                    clients.remove(clientSocket.getInetAddress());
+                    clients.remove(clientSocket.getInetAddress().toString() );
                 }
 
             }
@@ -94,7 +155,7 @@ public class TelephonyServer {
 
     private ServerSocket welcomeSocket;
     private Socket clientSocket;
-    private DatagramSocket heartbeatSocket;
+    private DatagramSocket udpSocket;
 
     public static String getCurrentDate() {
         DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
@@ -102,7 +163,7 @@ public class TelephonyServer {
         return dateFormat.format(date);
     }
 
-    HashMap <InetAddress, ClientInfo> clients = new HashMap<>();
+    HashMap <String, ClientInfo> clients = new HashMap<>();
 
     public void start(int port) {
 
@@ -111,7 +172,8 @@ public class TelephonyServer {
         //Trying to bind port for TCP&UDP servers
         try {
             welcomeSocket = new ServerSocket(port);
-            heartbeatSocket = new DatagramSocket(port + 1);
+            udpSocket = new DatagramSocket(port + 1);
+            udpSocket.setSoTimeout(10000);
             System.out.println("TCP Server started at " + welcomeSocket.getLocalSocketAddress());
             System.out.println("UDP Heartbeat listening on " + (port+1));
         } catch (IOException ex) {
@@ -127,8 +189,8 @@ public class TelephonyServer {
                 DatagramPacket packet = new DatagramPacket(buf, 1);
                 while (true) {
                     try {
-                        heartbeatSocket.receive(packet);
-                        ClientInfo cli = clients.get(packet.getAddress());
+                        udpSocket.receive(packet);
+                        ClientInfo cli = clients.get(packet.getAddress().toString());
                         cli.realPort = packet.getPort();
                         //System.out.println(">>Heartbeat from " + packet.getAddress().toString() + ":" + packet.getPort());
                     } catch (Exception ex) {
@@ -152,13 +214,46 @@ public class TelephonyServer {
 
                 //adding him to hashmap
                 ClientInfo cli = new ClientInfo(clientSocket.getInetAddress().toString(), clientSocket.getInetAddress(), -1);
-                clients.put(clientSocket.getInetAddress(), cli);
+                clients.put(clientSocket.getInetAddress().toString() , cli);
                 System.out.println("added to hashmap");
 
             } catch (IOException ex) {
                 System.out.println(">>Client tried to connect, but failed somehow.");
             }
 
+        }
+    }
+
+
+    public void askForPhoneCall(ClientInfo from, ClientInfo to) {
+        System.out.println("Call initialised");
+        String s = "callfrom " + from.nickname;
+        byte[] bufTo = s.getBytes();
+        DatagramPacket packetTo = new DatagramPacket(bufTo, bufTo.length, to.ip, to.realPort);
+        byte[] bufFrom = new byte[2];
+        DatagramPacket packetFrom = new DatagramPacket(bufFrom, 2, from.ip, from.realPort);
+        try {
+            udpSocket.send(packetTo);
+            System.out.println("Call request sent on " + packetTo.getAddress().toString() + ":" + packetTo.getPort());
+
+
+        } catch (Exception ex) {
+            System.out.println("Call error: " + ex.toString());
+            return;
+        }
+
+    }
+
+    public void sendUDPString(ClientInfo to, String str) {
+        byte[] bufTo = str.getBytes();
+        DatagramPacket packetTo = new DatagramPacket(bufTo, bufTo.length, to.ip, to.realPort);
+        try {
+            udpSocket.send(packetTo);
+            System.out.println(str + " sent to " + packetTo.getAddress().toString() + ":" + packetTo.getPort());
+
+        } catch (Exception ex) {
+            System.out.println("Sending error: " + ex.toString());
+            return;
         }
     }
 }
