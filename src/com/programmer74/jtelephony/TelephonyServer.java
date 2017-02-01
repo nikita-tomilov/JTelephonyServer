@@ -125,8 +125,8 @@ public class TelephonyServer {
                         }
                         if (callTo.hasAcceptedCall) {
                             outputs.writeUTF("call ok");
-                            sendUDPString(cli, "callstart");
-                            sendUDPString(callTo, "callstart");
+                            sendUDPString(cli, "callstart " + callTo.ip.toString() + " " + callTo.realPort);
+                            sendUDPString(callTo, "callstart " + cli.ip.toString() + " " + cli.realPort);
 
                         } else {
                             outputs.writeUTF("call fail");
