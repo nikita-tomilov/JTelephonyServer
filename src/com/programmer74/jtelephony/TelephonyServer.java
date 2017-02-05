@@ -160,6 +160,13 @@ public class TelephonyServer {
 
                     proxySocket.receive(packet);
                     ClientInfo thisClient = clients.get(packet.getAddress().toString());
+
+                    if (thisClient.realPort != packet.getPort())
+                    {
+                        thisClient.realPort = packet.getPort();
+                        System.out.println(thisClient.ip.toString() + "'s port has changed to " + thisClient.realPort);
+                    }
+
                     ClientInfo sendTo = thisClient.callingTo;
                     if (sendTo == null) continue;
                     resend = new byte[packet.getLength()];
@@ -167,7 +174,7 @@ public class TelephonyServer {
                     resendp = new DatagramPacket(resend, resend.length, sendTo.ip, sendTo.realPort);
                     proxySocket.send(resendp);
                     //System.out.println(">>Heartbeat from " + packet.getAddress().toString() + ":" + packet.getPort());
-                    //System.out.println(">>> proxy " + packet.getAddress().toString() + ":" + packet.getPort() + " -> " + resendp.getAddress().toString() + ":" + resendp.getPort() + ", bytes: " + resend.length);
+                    System.err.println(">>> proxy " + packet.getAddress().toString() + ":" + packet.getPort() + " -> " + resendp.getAddress().toString() + ":" + resendp.getPort() + ", bytes: " + resend.length);
                 } catch (SocketTimeoutException stex) {
                     // timeout cause noone is online
                 }
