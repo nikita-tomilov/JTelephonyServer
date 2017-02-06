@@ -1,8 +1,5 @@
 package com.programmer74.jtelephony;
 
-import sun.plugin2.main.server.HeartbeatThread;
-
-import javax.xml.crypto.Data;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
