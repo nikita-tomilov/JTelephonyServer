@@ -6,4 +6,6 @@ public class Main {
         TelephonyServer ts = new TelephonyServer();
         ts.start(7000);
     }
+
+    //TODO: Превратить list в map чтобы все индексы оставались рабочими
 }

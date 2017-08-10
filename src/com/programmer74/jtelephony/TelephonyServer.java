@@ -6,181 +6,13 @@ import java.io.IOException;
 import java.net.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 //Server class to accept connection from clients
 public class TelephonyServer {
 
-    //Client threads, in which we parse text commands got from clients
-    class Client implements Runnable {
-        private Socket clientSocket;
-        private boolean isConnected = true;
-        private String ip;
-
-        public Client (Socket socket) {
-            this.clientSocket = socket;
-            ip = socket.getInetAddress().toString();
-        }
-
-        @Override
-        public void run() {
-
-            DataInputStream inputs;
-            DataOutputStream outputs;
-
-            try {
-                inputs = new DataInputStream(clientSocket.getInputStream());
-                outputs = new DataOutputStream(clientSocket.getOutputStream());
-                isConnected = true;
-            } catch (IOException ex) {
-                System.out.println(">>IO stabilizing error on " + ip + " Probably client disconnected.");
-                return;
-            }
-
-            while (isConnected) {
-                //Communication based on text commands goes here
-                try {
-                    String s = inputs.readUTF();
-                    ClientInfo thisClient = clients.get(clientSocket.getInetAddress().toString() );
-
-                    //System.out.println(">" + s + "<");
-                    if (s.equals("list")) {
-                        s = "-----\n";
-                        for (ClientInfo cl : clients.values()) {
-                            s += cl.nickname + " on " + cl.ip.toString() + ":" + cl.realPort + "\n";
-
-                        }
-                        s += "-----";
-                        outputs.writeUTF(s);
-                        continue;
-                    }
-                    if (s.matches("setnick [^ ]+")) {
-                        thisClient.nickname = s.split(" ")[1];
-                        outputs.writeUTF("ok");
-                        continue;
-                    }
-                    if (s.equals("y") && thisClient.isWaitingCall) {
-                        thisClient.hasAcceptedCall = true;
-                        thisClient.isWaitingCall = false;
-                        outputs.writeUTF("call accepted");
-                        continue;
-                    }
-                    if (s.equals("n") && thisClient.isWaitingCall) {
-                        thisClient.hasAcceptedCall = false;
-                        thisClient.isWaitingCall = false;
-                        outputs.writeUTF("call not accepted");
-                        continue;
-                    }
-
-                    if (s.matches("call [^ ]+")) {
-                        String callToNick = s.split(" ")[1];
-                        ClientInfo callTo = null;
-                        for (ClientInfo cl : clients.values()) {
-                           if (cl.nickname.equals(callToNick)) callTo = cl;
-                        }
-                        //no client with that nick
-                        if (callTo == null) {
-                            outputs.writeUTF("who's that?");
-                            continue;
-                        }
-                        //ask for call
-                        thisClient.isWaitingCall = true;
-                        thisClient.hasAcceptedCall = false;
-
-                        callTo.isWaitingCall = true;
-                        callTo.hasAcceptedCall = false;
-                        //actual asking
-                        askForPhoneCall(thisClient, callTo);
-                        //now waiting till callTo accepts it or not (or timeout?)
-                        long start_time = System.nanoTime();
-                        long end_time;
-                        while (callTo.isWaitingCall) {
-                            end_time = System.nanoTime();
-                            double difference = (end_time - start_time) / 1e6;
-                            if (difference > 30000) break;
-                            if (callTo.isWaitingCall == false) break;
-                            try {
-                                Thread.sleep(100);
-                            } catch (Exception ex) {};
-                        }
-                        if (callTo.hasAcceptedCall) {
-                            outputs.writeUTF("call ok");
-                            callTo.callingTo = thisClient;
-                            thisClient.callingTo = callTo;
-                            if (IS_PROXY) {
-                                sendUDPString(thisClient, "callstart on_proxy");
-                                sendUDPString(callTo, "callstart on_proxy");
-                            } else {
-                                sendUDPString(thisClient, "callstart " + callTo.ip.toString() + " " + callTo.realPort);
-                                sendUDPString(callTo, "callstart " + thisClient.ip.toString() + " " + thisClient.realPort);
-                            }
-
-                        } else {
-                            outputs.writeUTF("call fail");
-                        }
-                        thisClient.isWaitingCall = false;
-                        thisClient.hasAcceptedCall = false;
-                        callTo.isWaitingCall = false;
-                        callTo.hasAcceptedCall = false;
-                        continue;
-                    }
-                    outputs.writeUTF("what?");
-                } catch (Exception ex) {
-                    System.out.println(">>Client on " + ip + " disconnected.");
-                    System.out.println(ex.toString());
-                    isConnected = false;
-                    clients.remove(clientSocket.getInetAddress().toString() );
-                }
-
-            }
-
-
-
-        }
-    }
-
-    //Proxy thread, in which we overcome traffic
-    class Proxy implements  Runnable {
-        @Override
-        public void run() {
-
-            while (true) {
-                try {
-
-                    byte[] buf = new byte[4096];
-                    byte[] resend;
-                    DatagramPacket packet = new DatagramPacket(buf, 4096);
-                    DatagramPacket resendp;
-
-                    proxySocket.receive(packet);
-                    ClientInfo thisClient = clients.get(packet.getAddress().toString());
-
-                    if (thisClient.realPort != packet.getPort())
-                    {
-                        thisClient.realPort = packet.getPort();
-                        System.out.println(thisClient.ip.toString() + "'s port has changed to " + thisClient.realPort);
-                    }
-
-                    ClientInfo sendTo = thisClient.callingTo;
-                    if (sendTo == null) continue;
-                    resend = new byte[packet.getLength()];
-                    System.arraycopy(packet.getData(), packet.getOffset(), resend, 0, packet.getLength());
-                    resendp = new DatagramPacket(resend, resend.length, sendTo.ip, sendTo.realPort);
-                    proxySocket.send(resendp);
-                    //System.out.println(">>Heartbeat from " + packet.getAddress().toString() + ":" + packet.getPort());
-                    System.err.println(">>> proxy " + packet.getAddress().toString() + ":" + packet.getPort() + " -> " + resendp.getAddress().toString() + ":" + resendp.getPort() + ", bytes: " + resend.length);
-                } catch (SocketTimeoutException stex) {
-                    // timeout cause noone is online
-                }
-                catch (Exception ex) {
-                    System.out.println(">>Proxy error: " + ex.toString());
-                };
-            }
-        }
-    }
 
     //Hearbeat class for continuing our nat udp traffic routing
     class Heartbeat implements Runnable {
@@ -192,7 +24,7 @@ public class TelephonyServer {
             while (true) {
                 try {
                     udpSocket.receive(packet);
-                    ClientInfo thisClient = clients.get(packet.getAddress().toString());
+                    ClientInfo thisClient = clients.get(0);
                     thisClient.realPort = packet.getPort();
                     //System.out.println(">>Heartbeat from " + packet.getAddress().toString() + ":" + packet.getPort());
                 } catch (SocketTimeoutException stex) {
@@ -210,7 +42,7 @@ public class TelephonyServer {
     private DatagramSocket udpSocket;
     private DatagramSocket proxySocket;
 
-    public boolean IS_PROXY = true;
+    private Integer userCounter = 0;
 
     public static String getCurrentDate() {
         DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
@@ -218,7 +50,9 @@ public class TelephonyServer {
         return dateFormat.format(date);
     }
 
-    HashMap <String, ClientInfo> clients = new HashMap<>();
+    //HashMap <String, ClientInfo> clients = new HashMap<>();
+    //List<ClientInfo> clients = Collections.synchronizedList(new ArrayList<ClientInfo>());
+    Map<Integer, ClientInfo> clients = new ConcurrentHashMap<>(); // Collections.synchronizedMap(new HashMap<Integer, ClientInfo>());
 
     public void start(int port) {
 
@@ -241,7 +75,7 @@ public class TelephonyServer {
         Thread heartbeatThread = new Thread(new Heartbeat());
         heartbeatThread.start();
         //and proxy
-        Thread proxyThread = new Thread(new Proxy());
+        Thread proxyThread = new Thread(new ProxyThread(clients, proxySocket));
         proxyThread.start();
 
         //waiting for the connection
@@ -249,19 +83,26 @@ public class TelephonyServer {
             //client connected
             try {
                 clientSocket = welcomeSocket.accept();
-                System.out.println(">>Client connected from " + clientSocket.getInetAddress().toString() + " at " + getCurrentDate());
+                synchronized (clients) {
+                    System.out.println("[INFO] Client connected from " + clientSocket.getInetAddress().toString() + " at " + getCurrentDate());
 
-                //launching client
-                Thread clientThread = new Thread(new Client(clientSocket));
-                clientThread.start();
+                    //adding him to hashmap
+                    ClientInfo thisClient = new ClientInfo(clientSocket.getInetAddress().toString(), clientSocket.getInetAddress(), -1);
+                    //clients.put(clientSocket.getInetAddress().toString()/* + ":" + clientSocket.getPort()*/ , thisClient);
+                    thisClient.tcpPort = clientSocket.getPort();
+                    clients.put(userCounter, thisClient);
+                    thisClient.ID = userCounter;
+                    userCounter++;
+                    System.out.println("[INFO] Client added to hashmap");
 
-                //adding him to hashmap
-                ClientInfo thisClient = new ClientInfo(clientSocket.getInetAddress().toString(), clientSocket.getInetAddress(), -1);
-                clients.put(clientSocket.getInetAddress().toString() , thisClient);
-                System.out.println("added to hashmap");
+                    //launching client
+                    Thread clientThread = new Thread(new ClientThread(clientSocket, clients));
+                    clientThread.start();
+
+                }
 
             } catch (IOException ex) {
-                System.out.println(">>Client tried to connect, but failed somehow.");
+                System.err.println("[ERROR] Client tried to connect, but failed somehow.");
             }
 
         }
