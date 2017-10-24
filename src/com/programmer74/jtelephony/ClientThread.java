@@ -27,8 +27,17 @@ public class ClientThread implements Runnable {
     private String parseCommandAndGetAnswer(ClientInfo thisClient, String cmd, String param) {
         switch (cmd) {
             case "nick":
-                thisClient.nickname = param;
-                return (String.valueOf(thisClient.ID));
+                String nick = param.split(":")[0];
+                String passhash_given = param.split(":")[1];
+                String passhash_real = Utils.stringToMD5(thisClient.password);
+                if (passhash_given.equals(passhash_real)) {
+                    thisClient.nickname = nick;
+                    return (String.valueOf(thisClient.ID));
+                } else {
+                    isConnected = false;
+                    clients.remove(thisClient.ID);
+                    return ("-1");
+                }
             case "call":
                 ClientInfo callingToClient = null;
                 synchronized (clients) {

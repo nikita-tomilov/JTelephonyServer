@@ -25,9 +25,9 @@ public class ProxyThread implements  Runnable {
         while (true) {
             try {
 
-                byte[] buf = new byte[4096];
+                byte[] buf = new byte[640*480*6];
                 byte[] resend;
-                DatagramPacket packet = new DatagramPacket(buf, 4096);
+                DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 DatagramPacket resendp;
 
                 proxySocket.receive(packet);
@@ -56,7 +56,9 @@ public class ProxyThread implements  Runnable {
                     resendp = new DatagramPacket(resend, resend.length, sendTo.ip, sendTo.realPort);
                     proxySocket.send(resendp);
                     //System.out.println(">>Heartbeat from " + packet.getAddress().toString() + ":" + packet.getPort());
-                    System.err.println(">>> " + thisClient.nickname + "@" + packet.getAddress().toString() + ":" + packet.getPort() + " -> " + sendTo.nickname + "@" + resendp.getAddress().toString() + ":" + resendp.getPort() + ", bytes: " + resend.length);
+                    /*if (resend.length > 100) {
+                        System.err.println(">>> " + thisClient.nickname + "@" + packet.getAddress().toString() + ":" + packet.getPort() + " -> " + sendTo.nickname + "@" + resendp.getAddress().toString() + ":" + resendp.getPort() + ", bytes: " + resend.length);
+                    }*/
                 }
             } catch (SocketTimeoutException stex) {
                 // timeout cause noone is online

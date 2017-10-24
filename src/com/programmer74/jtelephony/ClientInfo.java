@@ -17,6 +17,8 @@ class ClientInfo {
     public ClientInfo beingCalledBy = null;
     public ClientInfo talkingTo = null;
 
+    public String password = "123";
+
     public int ID;
 
     public ClientInfo (String nickname, InetAddress ip, int port)
