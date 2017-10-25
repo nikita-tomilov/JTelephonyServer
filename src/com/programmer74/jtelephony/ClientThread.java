@@ -114,9 +114,11 @@ public class ClientThread implements Runnable {
                 return ("dec dummy;");
             case "call_hangup":
                 thisClient.callStatus = "nothing";
-                if ((thisClient.interlocutor != null) && (thisClient.interlocutor.interlocutor.ID == thisClient.ID))
-                    thisClient.interlocutor.callStatus = "call_finish";
-
+                if (thisClient.interlocutor != null) {
+                    if ((thisClient.interlocutor.interlocutor != null) && (thisClient.interlocutor.interlocutor.ID == thisClient.ID)) {
+                        thisClient.interlocutor.callStatus = "call_finish";
+                    }
+                }
                 thisClient.interlocutor = null;
 
                 return ("hang dummy;");
@@ -188,17 +190,25 @@ public class ClientThread implements Runnable {
 
                 }
 
-            } catch (Exception ex) {
+            } catch (java.io.IOException ioex) {
                 if (thisClient != null) {
-                    System.out.println("[INFO] Client on " + ip + " disconnected. " + ex.getMessage());
-                    if ((thisClient.interlocutor != null) && (thisClient.callStatus.equals("call_in_progress"))) {
-                        thisClient.interlocutor.callStatus = "call_hang";
-                        System.out.println("  [INFO] Client " + thisClient.interlocutor.nickname + " notified.");
+                    System.out.println("[INFO] Client on " + ip + " disconnected. " + ioex.getMessage());
+
+                    if (thisClient.interlocutor != null) {
+                        if ((thisClient.interlocutor.interlocutor != null) && (thisClient.interlocutor.interlocutor.ID == thisClient.ID)) {
+                            if (thisClient.callStatus.equals("call_in_progress")) {
+                                thisClient.interlocutor.callStatus = "call_hang";
+                                System.out.println("  [INFO] Client " + thisClient.interlocutor.nickname + " notified.");
+                            }
+                        }
                     }
+
                     //System.out.println(ex.toString() + ":" + ex.getMessage());
                     isConnected = false;
                     clients.remove(thisClient.ID);
                 }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
 
         }
