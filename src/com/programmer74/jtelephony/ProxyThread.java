@@ -45,10 +45,10 @@ public class ProxyThread implements  Runnable {
                     }
 
 
-                    if (!thisClient.callingToStatus.equals("ok")) continue;
-                    ClientInfo sendTo = thisClient.talkingTo;
+                    if (!thisClient.callStatus.equals("call_in_progress")) continue;
+                    ClientInfo sendTo = thisClient.interlocutor;
                     if (sendTo == null) {
-                        thisClient.callingToStatus = "hanged";
+                        thisClient.callStatus = "call_hang";
                         continue;
                     }
                     resend = new byte[packet.getLength()];

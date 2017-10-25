@@ -49,14 +49,19 @@ public class ClientThread implements Runnable {
                         }
                     }
 
+                    if ((callingToClient != null) && (callingToClient.interlocutor != null)) {
+                        return "busy";
+                    }
+
                     boolean call_ok = true;
                     if (callingToClient != null) {
                         //ClientInfo callingToClient = entry.getValue();
                         if (callingToClient.nickname.equals(param)) {
                             System.out.println("[INFO] " + thisClient.nickname + " tries to call " + callingToClient.nickname);
-                            thisClient.callingTo = callingToClient;
-                            callingToClient.beingCalledBy = thisClient;
-                            thisClient.callingToStatus = "wait";
+                            thisClient.interlocutor= callingToClient;
+                            callingToClient.interlocutor = thisClient;
+                            thisClient.callStatus = "calling_to_wait";
+                            callingToClient.callStatus = "being_called_by_wait";
                             return ("wait");
                             //System.out.println(callingToClient.beingCalledBy.toString());
 
@@ -69,46 +74,52 @@ public class ClientThread implements Runnable {
                 }
             case "status":
                 String status = "";
-                if (thisClient.callingToStatus == "ok")
-                    status += "talking_to " + thisClient.talkingTo.nickname + ";";
-                if (thisClient.beingCalledBy != null)
-                    status += "called_by " + thisClient.beingCalledBy.nickname + ";";
-                if (thisClient.callingTo != null) {
-                    if (thisClient.callingToStatus == "wait") {
+                if (thisClient.callStatus.equals("call_in_progress"))
+                    status += "talking_to " + thisClient.interlocutor.nickname + ";";
+                if (thisClient.callStatus.equals("being_called_by_wait"))
+                    status += "called_by " + thisClient.interlocutor.nickname + ";";
+                if (thisClient.callStatus.equals("calling_to_wait")) {
+                    if (thisClient.interlocutor.callStatus.equals("being_called_by_wait")) {
                         status += "calling_to wait;";
-                    } else if (thisClient.callingToStatus == "ok") {
+                    } else if (thisClient.interlocutor.callStatus.equals("call_accept")) {
                         status += "calling_to ok;";
                     }
                 }
-                if (thisClient.callingToStatus == "hanged") {
+                if (thisClient.callStatus.equals("call_hang")) {
                     status += "calling_to hanged;";
                 }
+                if (thisClient.callStatus.equals("call_finish")) {
+                    status += "calling_to finished;";
+                }
 
-                if (status == "") status = "nothing dummy;";
+                if (status.equals("")) status = "nothing dummy;";
                 return (status);
             case "call_accept":
-                if (thisClient.beingCalledBy == null) break;
+                if (thisClient.interlocutor == null) break;
 
-                thisClient.beingCalledBy.callingToStatus = "ok";
-                thisClient.beingCalledBy.talkingTo = thisClient;
-                thisClient.callingToStatus = "ok";
-                thisClient.talkingTo = thisClient.beingCalledBy;
-                thisClient.beingCalledBy = null;
-                return ("acc dummy");
+                thisClient.interlocutor.callStatus = "call_accept";
+
+                thisClient.interlocutor.callStatus = "call_in_progress";
+                thisClient.interlocutor.interlocutor = thisClient;
+                thisClient.callStatus = "call_in_progress";
+
+                return ("acc dummy;");
             case "call_decline":
-                if (thisClient.beingCalledBy == null) break;
-                if (thisClient.beingCalledBy.callingToStatus != "wait") break;
+                if (thisClient.interlocutor == null) break;
+                //if (!thisClient.interlocutor.callStatus.equals("calling_to_wait")) break;
 
-                thisClient.beingCalledBy.callingToStatus = "hanged";
-                thisClient.beingCalledBy.callingTo = null;
-                thisClient.beingCalledBy = null;
-                return ("dec dummy");
+                thisClient.interlocutor.callStatus = "call_hang";
+                thisClient.interlocutor.interlocutor = null;
+                thisClient.interlocutor = null;
+                return ("dec dummy;");
             case "call_hangup":
-                thisClient.callingToStatus = "nothing";
-                if ((thisClient.talkingTo != null) && (thisClient.talkingTo.talkingTo.ID == thisClient.ID))
-                    thisClient.talkingTo.callingToStatus = "nothing";
+                thisClient.callStatus = "nothing";
+                if ((thisClient.interlocutor != null) && (thisClient.interlocutor.interlocutor.ID == thisClient.ID))
+                    thisClient.interlocutor.callStatus = "call_finish";
 
-                return ("hang ok");
+                thisClient.interlocutor = null;
+
+                return ("hang dummy;");
             case "ls":
                 String all = "";
                 synchronized (clients) {
@@ -180,9 +191,9 @@ public class ClientThread implements Runnable {
             } catch (Exception ex) {
                 if (thisClient != null) {
                     System.out.println("[INFO] Client on " + ip + " disconnected. " + ex.getMessage());
-                    if (thisClient.talkingTo != null) {
-                        thisClient.talkingTo.callingToStatus = "hanged";
-                        System.out.println("  [INFO] Client " + thisClient.talkingTo.nickname + " notified.");
+                    if ((thisClient.interlocutor != null) && (thisClient.callStatus.equals("call_in_progress"))) {
+                        thisClient.interlocutor.callStatus = "call_hang";
+                        System.out.println("  [INFO] Client " + thisClient.interlocutor.nickname + " notified.");
                     }
                     //System.out.println(ex.toString() + ":" + ex.getMessage());
                     isConnected = false;

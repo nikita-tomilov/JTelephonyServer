@@ -12,10 +12,8 @@ class ClientInfo {
     public boolean isWaitingCall = false;
     public boolean hasAcceptedCall = false;
 
-    public ClientInfo callingTo = null;
-    public String callingToStatus = "";
-    public ClientInfo beingCalledBy = null;
-    public ClientInfo talkingTo = null;
+    public ClientInfo interlocutor = null;
+    public String callStatus = "";
 
     public String password = "123";
 
