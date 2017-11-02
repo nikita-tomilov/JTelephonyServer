@@ -2,6 +2,7 @@ package com.programmer74.jtelephony;
 
 
 import com.sun.security.ntlm.Client;
+import com.programmer74.jtdb.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,6 +16,8 @@ public class ClientThread implements Runnable {
     private boolean isConnected = true;
     private String ip;
 
+    CredentialsDAO crdao;
+
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
 
@@ -22,17 +25,31 @@ public class ClientThread implements Runnable {
         this.clientSocket = socket;
         ip = socket.getInetAddress().toString();
         this.clients = clients;
+
+        this.crdao = new CredentialsDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
 
         if (!thisClient.isLoggedIn) {
             if (cmd.equals("nick")) {
+
+                Credential crd;
+
                 String nick = param.split(":")[0];
                 String passhash_given = param.split(":")[1];
-                String passhash_real = Utils.stringToMD5(thisClient.password);
-                if (passhash_given.equals(passhash_real)    ) {
+
+                try {
+                    crd = crdao.getCredentialByUsername(nick);
+                    if (crd == null) throw new Exception();
+                } catch (Exception ex) {
+                    return "error";
+                }
+
+                String passhash_real = crd.getPasswordHash();
+                if (passhash_given.equals(passhash_real)) {
                     thisClient.nickname = nick;
+                    thisClient.credential = crd;
                     thisClient.isLoggedIn = true;
                     return (String.valueOf(thisClient.ID));
                 } else {
