@@ -28,4 +28,38 @@ public class CredentialsDAO {
         }
         return Credentials;
     }
+    public void addCredential(Credential credential) throws Exception {
+        Session session=null;
+        try{
+            session= HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            //System.out.println(Credential.toString());
+            session.save(credential);
+            session.getTransaction().commit();
+        }catch (Exception e){
+            //e.printStackTrace();
+            throw e;
+        }finally {
+            if(session!=null&&session.isOpen()){
+                session.close();
+            }
+        }
+    }
+    public Credential getCredentialByUsername(String username) throws SQLException {
+        Credential crd=null;
+        Session session=null;
+        try{
+            session= HibernateUtil.getSessionFactory().openSession();
+
+            crd = (Credential)(session.createCriteria(Credential.class).add(Restrictions.eq("username", username)).list().get(0));
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            if(session!=null&&session.isOpen()){
+                session.close();
+            }
+        }
+        return crd;
+    }
 }
