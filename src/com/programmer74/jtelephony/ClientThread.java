@@ -17,6 +17,7 @@ public class ClientThread implements Runnable {
     private String ip;
 
     CredentialsDAO crdao;
+    ProfilesDAO prfdao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
@@ -27,6 +28,7 @@ public class ClientThread implements Runnable {
         this.clients = clients;
 
         this.crdao = new CredentialsDAO();
+        this.prfdao = new ProfilesDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -35,6 +37,7 @@ public class ClientThread implements Runnable {
             if (cmd.equals("nick")) {
 
                 Credential crd;
+                Profile prf;
 
                 String nick = param.split(":")[0];
                 String passhash_given = param.split(":")[1];
@@ -42,14 +45,18 @@ public class ClientThread implements Runnable {
                 try {
                     crd = crdao.getCredentialByUsername(nick);
                     if (crd == null) throw new Exception();
+
+                    prf = prfdao.getProfileByCredentialID(crd.getId());
+                    if (prf == null) throw new Exception();
                 } catch (Exception ex) {
                     return "error";
                 }
 
                 String passhash_real = crd.getPasswordHash();
                 if (passhash_given.equals(passhash_real)) {
-                    thisClient.nickname = nick;
+                    thisClient.nickname = crd.getUsername();
                     thisClient.credential = crd;
+                    thisClient.profile = prf;
                     thisClient.isLoggedIn = true;
                     return (String.valueOf(thisClient.ID));
                 } else {
