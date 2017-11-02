@@ -4,7 +4,7 @@ package com.programmer74.jtelephony;
 import java.net.InetAddress;
 
 //Client information
-class ClientInfo {
+class OnlineClientInfo {
     public InetAddress ip;
     public int realPort;
     public int tcpPort;
@@ -12,7 +12,7 @@ class ClientInfo {
     public boolean isWaitingCall = false;
     public boolean hasAcceptedCall = false;
 
-    public ClientInfo interlocutor = null;
+    public OnlineClientInfo interlocutor = null;
     public String callStatus = "";
 
     public String password = "123";
@@ -21,7 +21,7 @@ class ClientInfo {
 
     public boolean isLoggedIn;
 
-    public ClientInfo (String nickname, InetAddress ip, int port)
+    public OnlineClientInfo (String nickname, InetAddress ip, int port)
     {
         this.nickname = nickname;
         this.ip = ip;

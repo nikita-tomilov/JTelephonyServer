@@ -11,10 +11,10 @@ import java.util.HashMap;
 //Proxy thread, in which we overcome traffic
 public class ProxyThread implements  Runnable {
 
-    Map<Integer, ClientInfo> clients = null;
+    Map<Integer, OnlineClientInfo> clients = null;
     private DatagramSocket proxySocket;
 
-    public ProxyThread(Map<Integer, ClientInfo> clients, DatagramSocket proxySocket) {
+    public ProxyThread(Map<Integer, OnlineClientInfo> clients, DatagramSocket proxySocket) {
         this.clients = clients;
         this.proxySocket = proxySocket;
     }
@@ -31,7 +31,7 @@ public class ProxyThread implements  Runnable {
                 DatagramPacket resendp;
 
                 proxySocket.receive(packet);
-                ClientInfo thisClient = null;
+                OnlineClientInfo thisClient = null;
                 synchronized (clients) {
                     thisClient = clients.get((int)(buf[0]));
 
@@ -46,7 +46,7 @@ public class ProxyThread implements  Runnable {
 
 
                     if (!thisClient.callStatus.equals("call_in_progress")) continue;
-                    ClientInfo sendTo = thisClient.interlocutor;
+                    OnlineClientInfo sendTo = thisClient.interlocutor;
                     if (sendTo == null) {
                         thisClient.callStatus = "call_hang";
                         continue;

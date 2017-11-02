@@ -15,16 +15,16 @@ public class ClientThread implements Runnable {
     private boolean isConnected = true;
     private String ip;
 
-    //HashMap<String, ClientInfo> clients = new HashMap<>();
-    Map<Integer, ClientInfo> clients = null;
+    //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
+    Map<Integer, OnlineClientInfo> clients = null;
 
-    public ClientThread (Socket socket,  Map<Integer, ClientInfo> clients) {
+    public ClientThread (Socket socket,  Map<Integer, OnlineClientInfo> clients) {
         this.clientSocket = socket;
         ip = socket.getInetAddress().toString();
         this.clients = clients;
     }
 
-    private String parseCommandAndGetAnswer(ClientInfo thisClient, String cmd, String param) {
+    private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
 
         if (!thisClient.isLoggedIn) {
             if (cmd.equals("nick")) {
@@ -47,10 +47,10 @@ public class ClientThread implements Runnable {
 
         switch (cmd) {
             case "call":
-                ClientInfo callingToClient = null;
+                OnlineClientInfo callingToClient = null;
                 synchronized (clients) {
-                    for (Map.Entry<Integer, ClientInfo> m : clients.entrySet()) {
-                        ClientInfo cli = m.getValue();
+                    for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
+                        OnlineClientInfo cli = m.getValue();
                         if (cli.nickname.equals(param)) {
                             callingToClient = cli;
                             break;
@@ -63,7 +63,7 @@ public class ClientThread implements Runnable {
 
                     boolean call_ok = true;
                     if (callingToClient != null) {
-                        //ClientInfo callingToClient = entry.getValue();
+                        //OnlineClientInfo callingToClient = entry.getValue();
                         if (callingToClient.nickname.equals(param)) {
                             System.out.println("[INFO] " + thisClient.nickname + " tries to call " + callingToClient.nickname);
                             thisClient.interlocutor= callingToClient;
@@ -133,8 +133,8 @@ public class ClientThread implements Runnable {
             case "ls":
                 String all = "";
                 synchronized (clients) {
-                    for (Map.Entry<Integer, ClientInfo> m : clients.entrySet()) {
-                        ClientInfo cli = m.getValue();
+                    for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
+                        OnlineClientInfo cli = m.getValue();
                         all += cli.nickname + ";";
                     }
                 }
@@ -162,19 +162,19 @@ public class ClientThread implements Runnable {
             return;
         }
 
-        ClientInfo thisClient = null;
+        OnlineClientInfo thisClient = null;
 
         while (isConnected) {
             //Communication based on text commands goes here
             try {
                 String s = inputs.readUTF();
                 synchronized (clients) {
-                    for (Map.Entry<Integer, ClientInfo> m : clients.entrySet()) {
-                        ClientInfo cli = m.getValue();
+                    for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
+                        OnlineClientInfo cli = m.getValue();
                     /*}
                     Iterator i = clients.iterator(); // Must be in synchronized block
                     while (i.hasNext()) {
-                        ClientInfo cli = (ClientInfo) i.next();*/
+                        OnlineClientInfo cli = (OnlineClientInfo) i.next();*/
                         if ((cli.tcpPort == clientSocket.getPort()) && (cli.ip == clientSocket.getInetAddress())) {
                             thisClient = cli;
                             //System.out.println("[INFO] Found client");
