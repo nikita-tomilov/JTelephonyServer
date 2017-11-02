@@ -24,7 +24,7 @@ public class TelephonyServer {
             while (true) {
                 try {
                     udpSocket.receive(packet);
-                    ClientInfo thisClient = clients.get(0);
+                    OnlineClientInfo thisClient = clients.get(0);
                     thisClient.realPort = packet.getPort();
                     //System.out.println(">>Heartbeat from " + packet.getAddress().toString() + ":" + packet.getPort());
                 } catch (SocketTimeoutException stex) {
@@ -50,9 +50,9 @@ public class TelephonyServer {
         return dateFormat.format(date);
     }
 
-    //HashMap <String, ClientInfo> clients = new HashMap<>();
-    //List<ClientInfo> clients = Collections.synchronizedList(new ArrayList<ClientInfo>());
-    Map<Integer, ClientInfo> clients = new ConcurrentHashMap<>(); // Collections.synchronizedMap(new HashMap<Integer, ClientInfo>());
+    //HashMap <String, OnlineClientInfo> clients = new HashMap<>();
+    //List<OnlineClientInfo> clients = Collections.synchronizedList(new ArrayList<OnlineClientInfo>());
+    Map<Integer, OnlineClientInfo> clients = new ConcurrentHashMap<>(); // Collections.synchronizedMap(new HashMap<Integer, OnlineClientInfo>());
 
     public void start(int port) {
 
@@ -87,7 +87,7 @@ public class TelephonyServer {
                     System.out.println("[INFO] Client connected from " + clientSocket.getInetAddress().toString() + " at " + getCurrentDate());
 
                     //adding him to hashmap
-                    ClientInfo thisClient = new ClientInfo(clientSocket.getInetAddress().toString(), clientSocket.getInetAddress(), -1);
+                    OnlineClientInfo thisClient = new OnlineClientInfo(clientSocket.getInetAddress().toString(), clientSocket.getInetAddress(), -1);
                     //clients.put(clientSocket.getInetAddress().toString()/* + ":" + clientSocket.getPort()*/ , thisClient);
                     thisClient.tcpPort = clientSocket.getPort();
                     clients.put(userCounter, thisClient);
@@ -109,7 +109,7 @@ public class TelephonyServer {
     }
 
 
-    public void askForPhoneCall(ClientInfo from, ClientInfo to) {
+    public void askForPhoneCall(OnlineClientInfo from, OnlineClientInfo to) {
         System.out.println("Call initialised");
         String s = "callfrom " + from.nickname;
         byte[] bufTo = s.getBytes();
@@ -128,7 +128,7 @@ public class TelephonyServer {
 
     }
 
-    public void sendUDPString(ClientInfo to, String str) {
+    public void sendUDPString(OnlineClientInfo to, String str) {
         byte[] bufTo = str.getBytes();
         DatagramPacket packetTo = new DatagramPacket(bufTo, bufTo.length, to.ip, to.realPort);
         try {
