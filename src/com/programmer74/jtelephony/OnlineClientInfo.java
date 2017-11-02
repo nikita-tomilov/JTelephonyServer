@@ -2,6 +2,7 @@ package com.programmer74.jtelephony;
 
 
 import com.programmer74.jtdb.Credential;
+import com.programmer74.jtdb.Profile;
 
 import java.net.InetAddress;
 
@@ -12,6 +13,7 @@ class OnlineClientInfo {
     public int tcpPort;
     public String nickname;
     public Credential credential;
+    public Profile profile;
     public boolean isWaitingCall = false;
     public boolean hasAcceptedCall = false;
 

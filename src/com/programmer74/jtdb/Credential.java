@@ -50,8 +50,8 @@ public class Credential {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY, generator="increment")
-    @GenericGenerator(name="increment", strategy = "increment")
+    @GeneratedValue(strategy = GenerationType.IDENTITY, generator="crd_increment")
+    @GenericGenerator(name="crd_increment", strategy = "increment")
     @Column(name="id")
     private Integer id;
     @Column(name="username")
