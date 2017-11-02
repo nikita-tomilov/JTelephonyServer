@@ -19,10 +19,13 @@ class ClientInfo {
 
     public int ID;
 
+    public boolean isLoggedIn;
+
     public ClientInfo (String nickname, InetAddress ip, int port)
     {
         this.nickname = nickname;
         this.ip = ip;
         this.realPort = port;
+        isLoggedIn = false;
     }
 }
