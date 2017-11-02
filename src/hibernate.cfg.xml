@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.connection.driver_class">oracle.jdbc.driver.OracleDriver</property>
+        <property name="hibernate.connection.url">jdbc:oracle:thin:@localhost:1521:XE</property>
+        <!-- JUST4FUN -->
+        <property name="hibernate.connection.username">superadmin</property>
+        <property name="hibernate.connection.password">123456</property>
+        <property name="hibernate.dialect">org.hibernate.dialect.Oracle10gDialect</property>
+        <!--property name="hibernate.dialect">functions.CustomOracle10gDialect</property-->
+        <property name="show_sql">true</property>
+        <property name="hibernate.cache.use_second_level_cache">false</property>
+        <property name="connection.pool_size">10</property>
+
+        <property name="format_sql">true</property>
+        <property name="use_sql_comments">true</property>
+
+
+        <mapping class="com.programmer74.jtdb.Credential"></mapping>
+
+    </session-factory>
+</hibernate-configuration>
