@@ -164,6 +164,26 @@ public class ClientThread implements Runnable {
                 }
                 //all += ";";
                 return all;
+            case "info":
+                OnlineClientInfo infoAboutClient = null;
+                if (!param.equals("!!me")) {
+                    synchronized (clients) {
+                        for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
+                            OnlineClientInfo cli = m.getValue();
+                            if (cli.nickname.equals(param)) {
+                                infoAboutClient = cli;
+                                break;
+                            }
+                        }
+                    }
+                } else infoAboutClient = thisClient;
+                if (infoAboutClient == null) return "no_such_user";
+                String cliinfo = infoAboutClient.nickname + ":" +
+                        infoAboutClient.profile.getFirstName() + ":" +
+                        infoAboutClient.profile.getLastName() + ":" +
+                        infoAboutClient.profile.getCity() + ":" +
+                        infoAboutClient.profile.getStatus();
+                return cliinfo;
             default:
                 return ("wtf " + cmd);
         }
