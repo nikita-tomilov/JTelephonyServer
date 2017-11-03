@@ -18,6 +18,7 @@ public class ClientThread implements Runnable {
 
     CredentialsDAO crdao;
     ProfilesDAO prfdao;
+    MessagesDAO msgdao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
@@ -29,6 +30,7 @@ public class ClientThread implements Runnable {
 
         this.crdao = new CredentialsDAO();
         this.prfdao = new ProfilesDAO();
+        this.msgdao = new MessagesDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -69,17 +71,26 @@ public class ClientThread implements Runnable {
             }
         }
 
+        String paramNickname = param.split(":")[0];
+
+        OnlineClientInfo paramClient = null;
+        if((!cmd.equals("ls")) && (!cmd.equals("status"))) {
+            synchronized (clients) {
+                for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
+                    OnlineClientInfo cli = m.getValue();
+                    if (cli.nickname.equals(paramNickname)) {
+                        paramClient = cli;
+                        break;
+                    }
+                }
+            }
+        }
+
         switch (cmd) {
             case "call":
                 OnlineClientInfo callingToClient = null;
                 synchronized (clients) {
-                    for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
-                        OnlineClientInfo cli = m.getValue();
-                        if (cli.nickname.equals(param)) {
-                            callingToClient = cli;
-                            break;
-                        }
-                    }
+                    callingToClient = paramClient;
 
                     if ((callingToClient != null) && (callingToClient.interlocutor != null)) {
                         return "busy";
@@ -122,6 +133,9 @@ public class ClientThread implements Runnable {
                 }
                 if (thisClient.callStatus.equals("call_finish")) {
                     status += "calling_to finished;";
+                }
+                if (thisClient.hasIncomingMessages)  {
+                    status += "has incoming_messages;";
                 }
 
                 if (status.equals("")) status = "nothing dummy;";
@@ -167,15 +181,7 @@ public class ClientThread implements Runnable {
             case "info":
                 OnlineClientInfo infoAboutClient = null;
                 if (!param.equals("!!me")) {
-                    synchronized (clients) {
-                        for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
-                            OnlineClientInfo cli = m.getValue();
-                            if (cli.nickname.equals(param)) {
-                                infoAboutClient = cli;
-                                break;
-                            }
-                        }
-                    }
+                    infoAboutClient = paramClient;
                 } else infoAboutClient = thisClient;
                 if (infoAboutClient == null) return "no_such_user";
                 String cliinfo = infoAboutClient.nickname + ":" +
@@ -184,6 +190,40 @@ public class ClientThread implements Runnable {
                         infoAboutClient.profile.getCity() + ":" +
                         infoAboutClient.profile.getStatus();
                 return cliinfo;
+
+            case "sendmsg":
+                if (paramClient == null) return "error";
+
+                String msgText = Utils.Base64Decode(param.split(":")[1]);
+                Message msg = new Message();
+                msg.setFromID(thisClient.profile.getId());
+                msg.setToID(paramClient.profile.getId());
+                msg.setMessage(msgText);
+                msg.setSentAt(new Date());
+                try {
+                    msgdao.addMessage(msg);
+                    paramClient.hasIncomingMessages = true;
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return "error";
+                }
+
+            case "getmsg":
+                if (paramClient == null) return "error";
+
+                String messageDump = "";
+                try {
+                    List<Message> lm = msgdao.getAllMessagesInDialog(thisClient.profile.getId(), paramClient.profile.getId(), 0, 100);
+                    for (Message msgit : lm) {
+                        messageDump += (msgit.getFromID() == thisClient.profile.getId() ? thisClient.nickname : paramClient.nickname) + ":" +
+                                        Utils.Base64Encode(msgit.getMessage()) + ";";
+                    }
+                    thisClient.hasIncomingMessages = false;
+                    return messageDump;
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return "error";
+                }
             default:
                 return ("wtf " + cmd);
         }
