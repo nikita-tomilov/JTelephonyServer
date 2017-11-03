@@ -17,6 +17,8 @@ class OnlineClientInfo {
     public boolean isWaitingCall = false;
     public boolean hasAcceptedCall = false;
 
+    public boolean hasIncomingMessages = false;
+
     public OnlineClientInfo interlocutor = null;
     public String callStatus = "";
 
