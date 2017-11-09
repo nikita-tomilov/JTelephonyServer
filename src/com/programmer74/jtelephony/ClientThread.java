@@ -105,6 +105,17 @@ public class ClientThread implements Runnable {
             }
         }
 
+        if (paramClient == null && !(paramNickname.equals("dummy"))) {
+            try {
+                Credential tmpcrd = crdao.getCredentialByUsername(paramNickname);
+                paramClient = new OnlineClientInfo(tmpcrd.getUsername(), null, -1);
+                paramClient.profile = prfdao.getProfileByCredentialID(tmpcrd.getId());
+                paramClient.credential = tmpcrd;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+
         switch (cmd) {
             case "call":
                 OnlineClientInfo callingToClient = null;
