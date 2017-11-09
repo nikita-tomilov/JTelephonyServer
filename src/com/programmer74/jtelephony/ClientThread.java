@@ -19,6 +19,7 @@ public class ClientThread implements Runnable {
     CredentialsDAO crdao;
     ProfilesDAO prfdao;
     MessagesDAO msgdao;
+    LoginHistoryDAO lghistdao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
@@ -31,6 +32,7 @@ public class ClientThread implements Runnable {
         this.crdao = new CredentialsDAO();
         this.prfdao = new ProfilesDAO();
         this.msgdao = new MessagesDAO();
+        this.lghistdao = new LoginHistoryDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -55,15 +57,27 @@ public class ClientThread implements Runnable {
                 }
 
                 String passhash_real = crd.getPasswordHash();
+                LoginHistory lh = new LoginHistory(crd.getId(), new Date(), "fail");
                 if (passhash_given.equals(passhash_real)) {
                     thisClient.nickname = crd.getUsername();
                     thisClient.credential = crd;
                     thisClient.profile = prf;
                     thisClient.isLoggedIn = true;
+                    try {
+                        lh.setState("ok");
+                        lghistdao.addLoginHistory(lh);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                     return (String.valueOf(thisClient.ID));
                 } else {
                     isConnected = false;
                     clients.remove(thisClient.ID);
+                    try {
+                        lghistdao.addLoginHistory(lh);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                     return ("-1");
                 }
             } else {
