@@ -1,6 +1,7 @@
 package com.programmer74.jtelephony;
 
 
+import com.programmer74.jtdb.Call;
 import com.programmer74.jtdb.Credential;
 import com.programmer74.jtdb.Profile;
 
@@ -14,6 +15,7 @@ class OnlineClientInfo {
     public String nickname;
     public Credential credential;
     public Profile profile;
+    public Call call = null;
     public boolean isWaitingCall = false;
     public boolean hasAcceptedCall = false;
 

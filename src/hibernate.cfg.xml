@@ -23,6 +23,8 @@
         <mapping class="com.programmer74.jtdb.Profile"></mapping>
         <mapping class="com.programmer74.jtdb.Message"></mapping>
         <mapping class="com.programmer74.jtdb.LoginHistory"></mapping>
+        <mapping class="com.programmer74.jtdb.Call"></mapping>
+        <!--TODO: Contacts, Tokens, Documents, Images, Attachments -->
 
     </session-factory>
 </hibernate-configuration>
