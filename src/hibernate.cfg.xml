@@ -24,7 +24,8 @@
         <mapping class="com.programmer74.jtdb.Message"></mapping>
         <mapping class="com.programmer74.jtdb.LoginHistory"></mapping>
         <mapping class="com.programmer74.jtdb.Call"></mapping>
-        <!--TODO: Contacts, Tokens, Documents, Images, Attachments -->
+        <mapping class="com.programmer74.jtdb.Contact"></mapping>
+        <!--TODO: Tokens, Documents, Images, Attachments -->
 
     </session-factory>
 </hibernate-configuration>

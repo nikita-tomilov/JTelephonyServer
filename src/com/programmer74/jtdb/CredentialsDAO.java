@@ -62,4 +62,21 @@ public class CredentialsDAO {
         }
         return crd;
     }
+    public Credential getCredentialByID(Integer crid) throws SQLException {
+        Credential crd=null;
+        Session session=null;
+        try{
+            session= HibernateUtil.getSessionFactory().openSession();
+
+            crd = (Credential)(session.get(Credential.class, crid));
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            if(session!=null&&session.isOpen()){
+                session.close();
+            }
+        }
+        return crd;
+    }
 }

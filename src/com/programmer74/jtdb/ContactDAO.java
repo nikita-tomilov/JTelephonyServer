@@ -3,20 +3,21 @@ package com.programmer74.jtdb;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.annotations.SourceType;
+import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 
 import java.sql.SQLException;
 import java.util.List;
 
-public class ProfilesDAO {
-    public List<Profile> getProfiles() throws SQLException {
-        List<Profile> Profiles=null;
+public class ContactDAO {
+    public List<Contact> getAllContact() throws SQLException {
+        List<Contact> Contact=null;
         Session session=null;
         try{
             session= HibernateUtil.getSessionFactory().openSession();
 
-            Profiles=session.createCriteria(Profile.class).list();
+            Contact=session.createCriteria(Contact.class).list();
 
         }catch (Exception e){
             e.printStackTrace();
@@ -25,16 +26,17 @@ public class ProfilesDAO {
                 session.close();
             }
         }
-        System.out.println(Profiles.isEmpty());
-        return Profiles;
+        System.out.println(Contact.isEmpty());
+        return Contact;
     }
-    public void addProfile(Profile profile) throws Exception {
+
+    public void addContact(Contact Contact) throws Exception {
         Session session=null;
         try{
             session= HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
 
-            session.save(profile);
+            session.save(Contact);
             session.getTransaction().commit();
         }catch (Exception e){
             //e.printStackTrace();
@@ -45,30 +47,18 @@ public class ProfilesDAO {
             }
         }
     }
-    public void updateProfile(Profile profile) throws Exception {
-        Session session=null;
-        try{
-            session= HibernateUtil.getSessionFactory().openSession();
-            session.beginTransaction();
 
-            session.update(profile);
-            session.getTransaction().commit();
-        }catch (Exception e){
-            //e.printStackTrace();
-            throw e;
-        }finally {
-            if(session!=null&&session.isOpen()){
-                session.close();
-            }
-        }
-    }
-    public Profile getProfileByCredentialID(Integer crid) throws SQLException {
-        Profile prf=null;
+    public List<Contact> getAllContactsForProfile(Integer profileId) throws SQLException {
+        List<Contact> Contacts=null;
         Session session=null;
         try{
             session= HibernateUtil.getSessionFactory().openSession();
 
-            prf = (Profile)(session.createCriteria(Profile.class).add(Restrictions.eq("CredentialsID", crid)).list().get(0));
+            Criterion oneSide = Restrictions.eq("FromID", profileId);
+            Criterion anotherSide = Restrictions.eq("ToID", profileId);
+
+            Contacts=session.createCriteria(Contact.class).add(Restrictions.or(oneSide, anotherSide))
+                    .list();
 
         }catch (Exception e){
             e.printStackTrace();
@@ -77,15 +67,22 @@ public class ProfilesDAO {
                 session.close();
             }
         }
-        return prf;
+
+        return Contacts;
     }
-    public Profile getProfileByID(Integer prid) throws SQLException {
-        Profile prf=null;
+
+    public List<Contact> getApprovedContactsForProfile(Integer profileId) throws SQLException {
+        List<Contact> Contacts=null;
         Session session=null;
         try{
             session= HibernateUtil.getSessionFactory().openSession();
 
-            prf = (Profile)(session.get(Profile.class, prid));
+            Criterion oneSide = Restrictions.eq("FromID", profileId);
+            Criterion anotherSide = Restrictions.eq("ToID", profileId);
+
+            Contacts=session.createCriteria(Contact.class).add(Restrictions.or(oneSide, anotherSide))
+                    .add(Restrictions.eq("IsAccepted", 1))
+                    .list();
 
         }catch (Exception e){
             e.printStackTrace();
@@ -94,6 +91,7 @@ public class ProfilesDAO {
                 session.close();
             }
         }
-        return prf;
+
+        return Contacts;
     }
 }
