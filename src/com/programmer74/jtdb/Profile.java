@@ -82,6 +82,7 @@ public class Profile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY, generator="prf_increment")
     @GenericGenerator(name="prf_increment", strategy = "increment")
+    @Column
     private Integer id;
 
     @Column

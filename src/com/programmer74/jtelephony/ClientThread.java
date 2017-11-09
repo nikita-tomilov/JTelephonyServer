@@ -1,7 +1,6 @@
 package com.programmer74.jtelephony;
 
 
-import com.sun.security.ntlm.Client;
 import com.programmer74.jtdb.*;
 
 import java.io.DataInputStream;
@@ -20,7 +19,8 @@ public class ClientThread implements Runnable {
     private ProfilesDAO prfdao;
     private MessagesDAO msgdao;
     private LoginHistoryDAO lghistdao;
-    private CallDAO cdao;
+    private CallDAO calldao;
+    private ContactDAO condao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
@@ -34,7 +34,8 @@ public class ClientThread implements Runnable {
         this.prfdao = new ProfilesDAO();
         this.msgdao = new MessagesDAO();
         this.lghistdao = new LoginHistoryDAO();
-        this.cdao = new CallDAO();
+        this.calldao = new CallDAO();
+        this.condao = new ContactDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -169,7 +170,7 @@ public class ClientThread implements Runnable {
 
                 thisClient.call = new Call(thisClient.interlocutor.profile.getId(), thisClient.profile.getId(), new Date());
                 try {
-                    cdao.addCall(thisClient.call);
+                    calldao.addCall(thisClient.call);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -191,7 +192,7 @@ public class ClientThread implements Runnable {
                         if (thisClient.interlocutor.call != null) {
                             thisClient.interlocutor.call.setFinished(new Date());
                             try {
-                                cdao.updateCall(thisClient.interlocutor.call);
+                                calldao.updateCall(thisClient.interlocutor.call);
                             } catch (Exception ex) {
                                 ex.printStackTrace();
                             }
@@ -204,7 +205,7 @@ public class ClientThread implements Runnable {
                 if (thisClient.call != null) {
                     thisClient.call.setFinished(new Date());
                     try {
-                        cdao.updateCall(thisClient.call);
+                        calldao.updateCall(thisClient.call);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -212,7 +213,7 @@ public class ClientThread implements Runnable {
                 }
 
                 return ("hang dummy;");
-            case "ls":
+            case "ls_online_on_server":
                 String all = "";
                 synchronized (clients) {
                     for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
@@ -222,6 +223,21 @@ public class ClientThread implements Runnable {
                 }
                 //all += ";";
                 return all;
+
+            case "ls":
+                all = thisClient.nickname + ";";
+                try {
+                    List<Contact> conlist = condao.getApprovedContactsForProfile(thisClient.profile.getId());
+                    for (Contact contact : conlist) {
+                        Profile p = prfdao.getProfileByID(contact.getFromID() == thisClient.profile.getId() ? contact.getToID() : contact.getFromID());
+                        Credential c = crdao.getCredentialByID(p.getCredentialsID());
+                        all += c.getUsername() + ";";
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                return all;
+
             case "info":
                 OnlineClientInfo infoAboutClient = null;
                 if (!param.equals("!!me")) {
