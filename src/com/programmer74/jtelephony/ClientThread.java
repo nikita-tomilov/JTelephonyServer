@@ -16,10 +16,11 @@ public class ClientThread implements Runnable {
     private boolean isConnected = true;
     private String ip;
 
-    CredentialsDAO crdao;
-    ProfilesDAO prfdao;
-    MessagesDAO msgdao;
-    LoginHistoryDAO lghistdao;
+    private CredentialsDAO crdao;
+    private ProfilesDAO prfdao;
+    private MessagesDAO msgdao;
+    private LoginHistoryDAO lghistdao;
+    private CallDAO cdao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
@@ -33,6 +34,7 @@ public class ClientThread implements Runnable {
         this.prfdao = new ProfilesDAO();
         this.msgdao = new MessagesDAO();
         this.lghistdao = new LoginHistoryDAO();
+        this.cdao = new CallDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -163,6 +165,13 @@ public class ClientThread implements Runnable {
                 thisClient.interlocutor.interlocutor = thisClient;
                 thisClient.callStatus = "call_in_progress";
 
+                thisClient.call = new Call(thisClient.interlocutor.profile.getId(), thisClient.profile.getId(), new Date());
+                try {
+                    cdao.addCall(thisClient.call);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+
                 return ("acc dummy;");
             case "call_decline":
                 if (thisClient.interlocutor == null) break;
@@ -177,9 +186,28 @@ public class ClientThread implements Runnable {
                 if (thisClient.interlocutor != null) {
                     if ((thisClient.interlocutor.interlocutor != null) && (thisClient.interlocutor.interlocutor.ID == thisClient.ID)) {
                         thisClient.interlocutor.callStatus = "call_finish";
+                        if (thisClient.interlocutor.call != null) {
+                            thisClient.interlocutor.call.setFinished(new Date());
+                            try {
+                                cdao.updateCall(thisClient.interlocutor.call);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            thisClient.interlocutor.call = null;
+                        }
+
                     }
                 }
                 thisClient.interlocutor = null;
+                if (thisClient.call != null) {
+                    thisClient.call.setFinished(new Date());
+                    try {
+                        cdao.updateCall(thisClient.call);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    thisClient.call = null;
+                }
 
                 return ("hang dummy;");
             case "ls":
