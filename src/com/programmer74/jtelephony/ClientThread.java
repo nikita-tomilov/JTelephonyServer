@@ -65,9 +65,11 @@ public class ClientThread implements Runnable {
                     thisClient.credential = crd;
                     thisClient.profile = prf;
                     thisClient.isLoggedIn = true;
+                    thisClient.profile.setStatus("online");
                     try {
                         lh.setState("ok");
                         lghistdao.addLoginHistory(lh);
+                        prfdao.updateProfile(thisClient.profile);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -336,7 +338,12 @@ public class ClientThread implements Runnable {
                             }
                         }
                     }
-
+                    try {
+                        thisClient.profile.setStatus("offline");
+                        prfdao.updateProfile(thisClient.profile);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                     //System.out.println(ex.toString() + ":" + ex.getMessage());
                     isConnected = false;
                     clients.remove(thisClient.ID);

@@ -45,6 +45,23 @@ public class ProfilesDAO {
             }
         }
     }
+    public void updateProfile(Profile profile) throws Exception {
+        Session session=null;
+        try{
+            session= HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+
+            session.update(profile);
+            session.getTransaction().commit();
+        }catch (Exception e){
+            //e.printStackTrace();
+            throw e;
+        }finally {
+            if(session!=null&&session.isOpen()){
+                session.close();
+            }
+        }
+    }
     public Profile getProfileByCredentialID(Integer crid) throws SQLException {
         Profile prf=null;
         Session session=null;
