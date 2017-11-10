@@ -27,4 +27,8 @@ public class Utils {
         byte[] encodedBytes = Base64.getDecoder().decode(input.getBytes());
         return new String(encodedBytes);
     }
+    public static String Base64EncodeBytes(byte[] input) {
+        byte[] encodedBytes = Base64.getEncoder().encode(input);
+        return new String(encodedBytes);
+    }
 }

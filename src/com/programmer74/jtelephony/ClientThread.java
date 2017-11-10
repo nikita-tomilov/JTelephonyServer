@@ -321,6 +321,14 @@ public class ClientThread implements Runnable {
                     ex.printStackTrace();
                     return "error";
                 }
+            case "getimg":
+                Integer imgindex = Integer.parseInt(param);
+                try {
+                    Picture pic = picdao.getPictureByID(imgindex);
+                    return Utils.Base64EncodeBytes(pic.getData());
+                } catch (Exception ex) {
+                    return "error";
+                }
             default:
                 return ("wtf " + cmd);
         }
