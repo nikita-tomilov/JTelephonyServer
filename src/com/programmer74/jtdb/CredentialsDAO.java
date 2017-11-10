@@ -47,11 +47,13 @@ public class CredentialsDAO {
     }
     public Credential getCredentialByUsername(String username) throws SQLException {
         Credential crd=null;
+        List<Credential> crdlist = null;
         Session session=null;
         try{
             session= HibernateUtil.getSessionFactory().openSession();
 
-            crd = (Credential)(session.createCriteria(Credential.class).add(Restrictions.eq("username", username)).list().get(0));
+            crdlist = (session.createCriteria(Credential.class).add(Restrictions.eq("username", username)).list());
+            if (!crdlist.isEmpty()) crd = crdlist.get(0);
 
         }catch (Exception e){
             e.printStackTrace();
