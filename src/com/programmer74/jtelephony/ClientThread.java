@@ -21,12 +21,18 @@ public class ClientThread implements Runnable {
     private LoginHistoryDAO lghistdao;
     private CallDAO calldao;
     private ContactDAO condao;
+    private AttachmentsDAO attdao;
+    private DocumentsDAO docdao;
+    private PicturesDAO picdao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
 
     public ClientThread (Socket socket,  Map<Integer, OnlineClientInfo> clients) {
         this.clientSocket = socket;
+        try {
+            socket.setTcpNoDelay(true);
+        } catch (Exception ex) {};
         ip = socket.getInetAddress().toString();
         this.clients = clients;
 
@@ -36,6 +42,9 @@ public class ClientThread implements Runnable {
         this.lghistdao = new LoginHistoryDAO();
         this.calldao = new CallDAO();
         this.condao = new ContactDAO();
+        this.attdao = new AttachmentsDAO();
+        this.docdao = new DocumentsDAO();
+        this.picdao = new PicturesDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -105,7 +114,7 @@ public class ClientThread implements Runnable {
             }
         }
 
-        if (paramClient == null && !(paramNickname.equals("dummy"))) {
+        if (paramClient == null && !(paramNickname.equals("dummy")) && !(paramNickname.equals("!!me"))) {
             try {
                 Credential tmpcrd = crdao.getCredentialByUsername(paramNickname);
                 paramClient = new OnlineClientInfo(tmpcrd.getUsername(), null, -1);
@@ -240,7 +249,7 @@ public class ClientThread implements Runnable {
                 try {
                     List<Contact> conlist = condao.getApprovedContactsForProfile(thisClient.profile.getId());
                     for (Contact contact : conlist) {
-                        Profile p = prfdao.getProfileByID(contact.getFromID() == thisClient.profile.getId() ? contact.getToID() : contact.getFromID());
+                        Profile p = prfdao.getProfileByID(contact.getFromID().equals(thisClient.profile.getId()) ? contact.getToID() : contact.getFromID());
                         Credential c = crdao.getCredentialByID(p.getCredentialsID());
                         all += c.getUsername() + ";";
                     }
@@ -286,8 +295,25 @@ public class ClientThread implements Runnable {
                 try {
                     List<Message> lm = msgdao.getAllMessagesInDialog(thisClient.profile.getId(), paramClient.profile.getId(), 0, 100);
                     for (Message msgit : lm) {
-                        messageDump += (msgit.getFromID() == thisClient.profile.getId() ? thisClient.nickname : paramClient.nickname) + ":" +
-                                        Utils.Base64Encode(msgit.getMessage()) + ";";
+                        String currentMessage = msgit.getMessage();
+                        String currentAttachment = "null";
+
+                        if (msgit.getAttachment() != null) {
+                            Attachment at = attdao.getAttachmentByID(msgit.getAttachment());
+                            if (at.getType().equals("document")) {
+                                Document doc = docdao.getDocumentByID(at.getAttachmentID());
+                                currentAttachment = doc.getPath();
+                            }
+                            else if (at.getType().equals("picture")) {
+                                Picture pic = picdao.getPictureByID(at.getAttachmentID());
+                                currentAttachment = "-" + pic.getId();
+                            }
+                        }
+
+                        messageDump += (msgit.getFromID().equals(thisClient.profile.getId()) ? thisClient.nickname : paramClient.nickname)
+                                + ":" + Utils.Base64Encode(currentMessage)
+                                + ":" + Utils.Base64Encode(currentAttachment)
+                                + ";";
                     }
                     thisClient.hasIncomingMessages = false;
                     return messageDump;

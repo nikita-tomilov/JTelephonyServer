@@ -24,7 +24,7 @@ public class Picture {
     public String toString() {
         return "Picture{" +
                 "id=" + id +
-                ", Data=" + Arrays.toString(Data) +
+                ", Data: " + (Data.length) +
                 '}';
     }
 
