@@ -37,6 +37,9 @@ public class PicturesDAO {
             session.save(Picture);
             session.getTransaction().commit();
 
+            session.close();
+            session = HibernateUtil.getSessionFactory().openSession();
+
             Picture = (Picture) (session.createCriteria(Picture.class).add(Restrictions.eq("SentBy", Picture.getSentBy())).addOrder(Order.desc("id")).list().get(0));
 
         }catch (Exception e){

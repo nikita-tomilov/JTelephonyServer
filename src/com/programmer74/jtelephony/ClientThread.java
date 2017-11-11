@@ -105,7 +105,7 @@ public class ClientThread implements Runnable {
         String paramNickname = param.split(":")[0];
 
         OnlineClientInfo paramClient = null;
-        if((!cmd.equals("ls")) && (!cmd.equals("status"))) {
+        if((!cmd.equals("ls")) && (!cmd.equals("status")) && !(cmd.equals("getimg"))) {
             synchronized (clients) {
                 for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
                     OnlineClientInfo cli = m.getValue();
@@ -117,7 +117,7 @@ public class ClientThread implements Runnable {
             }
         }
 
-        if (paramClient == null && !(paramNickname.equals("dummy")) && !(paramNickname.equals("!!me"))) {
+        if (paramClient == null && !(paramNickname.equals("dummy")) && !(paramNickname.equals("!!me")) && !(cmd.equals("getimg"))) {
             try {
                 Credential tmpcrd = crdao.getCredentialByUsername(paramNickname);
                 paramClient = new OnlineClientInfo(tmpcrd.getUsername(), null, -1);

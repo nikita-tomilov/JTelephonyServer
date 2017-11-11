@@ -36,7 +36,10 @@ public class AttachmentsDAO {
 
             session.save(Attachment);
             session.getTransaction().commit();
+            //session.flush();
 
+            session.close();
+            session = HibernateUtil.getSessionFactory().openSession();
             Attachment = (Attachment) (session.createCriteria(Attachment.class).add(Restrictions.eq("SentBy", Attachment.getSentBy())).addOrder(Order.desc("id")).list().get(0));
 
         }catch (Exception e){
