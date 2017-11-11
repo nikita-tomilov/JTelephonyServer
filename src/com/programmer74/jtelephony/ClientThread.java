@@ -353,10 +353,17 @@ public class ClientThread implements Runnable {
 
         OnlineClientInfo thisClient = null;
 
+        byte[] buf = new byte[1024 * 1024];
+        int buf_len;
+
         while (isConnected) {
             //Communication based on text commands goes here
             try {
-                String s = inputs.readUTF();
+                buf_len = inputs.readInt();
+                System.out.println(buf_len);
+                inputs.readFully(buf, 0, buf_len);
+                String s = new String(buf, 0, buf_len);
+                //String s = inputs.readUTF();
                 synchronized (clients) {
                     for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
                         OnlineClientInfo cli = m.getValue();
@@ -382,7 +389,10 @@ public class ClientThread implements Runnable {
 
                     String ans = parseCommandAndGetAnswer(thisClient, cmd, param);
 
-                    outputs.writeUTF(ans);
+                    outputs.writeInt(ans.getBytes().length);
+                    outputs.write(ans.getBytes());
+                    outputs.flush();
+                    //outputs.writeUTF(ans);
                     System.out.println("[LOG] " + thisClient.nickname + " said " + cmd + "(" + param + "), reply: " + ans);
 
                 }
