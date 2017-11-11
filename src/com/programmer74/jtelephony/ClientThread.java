@@ -271,7 +271,8 @@ public class ClientThread implements Runnable {
                         infoAboutClient.profile.getFirstName() + ":" +
                         infoAboutClient.profile.getLastName() + ":" +
                         infoAboutClient.profile.getCity() + ":" +
-                        infoAboutClient.profile.getStatus();
+                        infoAboutClient.profile.getStatus() + ":" +
+                        (infoAboutClient.profile.getPictureID() == null ? "null" : infoAboutClient.profile.getPictureID());
                 return cliinfo;
 
             case "sendmsg":
