@@ -12,6 +12,9 @@ import java.util.*;
 //Client threads, in which we parse text commands got from clients
 public class ClientThread implements Runnable {
     private Socket clientSocket;
+    private DataInputStream inputs;
+    private DataOutputStream outputs;
+
     private boolean isConnected = true;
     private String ip;
 
@@ -325,7 +328,8 @@ public class ClientThread implements Runnable {
                 Integer imgindex = Integer.parseInt(param);
                 try {
                     Picture pic = picdao.getPictureByID(imgindex);
-                    return Utils.Base64EncodeBytes(pic.getData());
+                    sendBinaryAnswerToClient(pic.getData());
+                    return null;
                 } catch (Exception ex) {
                     return "error";
                 }
@@ -335,11 +339,29 @@ public class ClientThread implements Runnable {
         return "wtf " + cmd;
     }
 
+    private byte[] buf = new byte[1024 * 1024];
+    private int buf_len;
+
+    private String receiveClientRequest() throws IOException {
+        buf_len = inputs.readInt();
+        inputs.readFully(buf, 0, buf_len);
+        return new String(buf, 0, buf_len);
+    }
+
+    private void sendStringAnswerToClient(String answer) throws IOException {
+        outputs.writeInt(answer.getBytes().length);
+        outputs.write(answer.getBytes());
+        outputs.flush();
+    }
+
+    private void sendBinaryAnswerToClient(byte[] answer) throws IOException {
+        outputs.writeInt(answer.length);
+        outputs.write(answer);
+        outputs.flush();
+    }
+
     @Override
     public void run() {
-
-        DataInputStream inputs;
-        DataOutputStream outputs;
 
         try {
             inputs = new DataInputStream(clientSocket.getInputStream());
@@ -353,16 +375,10 @@ public class ClientThread implements Runnable {
 
         OnlineClientInfo thisClient = null;
 
-        byte[] buf = new byte[1024 * 1024];
-        int buf_len;
-
         while (isConnected) {
             //Communication based on text commands goes here
             try {
-                buf_len = inputs.readInt();
-                System.out.println(buf_len);
-                inputs.readFully(buf, 0, buf_len);
-                String s = new String(buf, 0, buf_len);
+                String s = receiveClientRequest();
                 //String s = inputs.readUTF();
                 synchronized (clients) {
                     for (Map.Entry<Integer, OnlineClientInfo> m : clients.entrySet()) {
@@ -389,9 +405,8 @@ public class ClientThread implements Runnable {
 
                     String ans = parseCommandAndGetAnswer(thisClient, cmd, param);
 
-                    outputs.writeInt(ans.getBytes().length);
-                    outputs.write(ans.getBytes());
-                    outputs.flush();
+                    if (ans != null) sendStringAnswerToClient(ans);
+
                     //outputs.writeUTF(ans);
                     System.out.println("[LOG] " + thisClient.nickname + " said " + cmd + "(" + param + "), reply: " + ans);
 
