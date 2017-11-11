@@ -36,6 +36,9 @@ public class PicturesDAO {
 
             session.save(Picture);
             session.getTransaction().commit();
+
+            Picture = (Picture) (session.createCriteria(Picture.class).add(Restrictions.eq("SentBy", Picture.getSentBy())).addOrder(Order.desc("id")).list().get(0));
+
         }catch (Exception e){
             //e.printStackTrace();
             throw e;

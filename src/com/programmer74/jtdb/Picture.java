@@ -12,6 +12,7 @@ import java.util.Date;
 @Entity
 @Table(name="Pictures")
 public class Picture {
+    @Column
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "pic_increment")
     @GenericGenerator(name = "pic_increment", strategy = "increment")
@@ -20,11 +21,15 @@ public class Picture {
     @Column
     private byte[] Data;
 
+    @Column
+    private Integer SentBy;
+
     @Override
     public String toString() {
         return "Picture{" +
                 "id=" + id +
-                ", Data: " + (Data.length) +
+                ", Data=" + Arrays.toString(Data) +
+                ", SentBy=" + SentBy +
                 '}';
     }
 
@@ -42,5 +47,13 @@ public class Picture {
 
     public void setData(byte[] data) {
         Data = data;
+    }
+
+    public Integer getSentBy() {
+        return SentBy;
+    }
+
+    public void setSentBy(Integer sentBy) {
+        SentBy = sentBy;
     }
 }

@@ -11,6 +11,7 @@ import java.util.Date;
 @Entity
 @Table(name="attachments")
 public class Attachment {
+    @Column
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "attch_increment")
     @GenericGenerator(name = "attch_increment", strategy = "increment")
@@ -22,12 +23,16 @@ public class Attachment {
     @Column
     private Integer AttachmentID;
 
+    @Column
+    private Integer SentBy;
+
     @Override
     public String toString() {
         return "Attachment{" +
                 "id=" + id +
                 ", Type='" + Type + '\'' +
                 ", AttachmentID=" + AttachmentID +
+                ", SentBy=" + SentBy +
                 '}';
     }
 
@@ -53,5 +58,13 @@ public class Attachment {
 
     public void setAttachmentID(Integer attachmentID) {
         AttachmentID = attachmentID;
+    }
+
+    public Integer getSentBy() {
+        return SentBy;
+    }
+
+    public void setSentBy(Integer sentBy) {
+        SentBy = sentBy;
     }
 }

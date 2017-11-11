@@ -279,14 +279,28 @@ public class ClientThread implements Runnable {
                 if (paramClient == null) return "error";
 
                 String msgText = Utils.Base64Decode(param.split(":")[1]);
+
                 Message msg = new Message();
                 msg.setFromID(thisClient.profile.getId());
                 msg.setToID(paramClient.profile.getId());
                 msg.setMessage(msgText);
                 msg.setSentAt(new Date());
+                String msgattach = param.split(":")[2];
+                Integer attachid = null;
+                try {
+                    if (!msgattach.equals("null")) {
+                        attachid = Integer.parseInt(msgattach);
+                        if (attdao.getAttachmentByID(attachid) == null) attachid = null;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    attachid = null;
+                }
+                msg.setAttachment(attachid);
                 try {
                     msgdao.addMessage(msg);
                     paramClient.hasIncomingMessages = true;
+                    return "ok";
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     return "error";
@@ -334,20 +348,49 @@ public class ClientThread implements Runnable {
                 } catch (Exception ex) {
                     return "error";
                 }
+            case "sendimg":
+                try {
+                    sendStringAnswerToClient("ready");
+                    byte[] imgdata = receiveClientBinaryRequest();
+                    Picture pic = new Picture();
+                    pic.setData(imgdata);
+                    pic.setSentBy(thisClient.profile.getId());
+                    picdao.addPicture(pic);
+                    System.out.println("PIC ID IS " + pic.getId());
+                    Attachment att = new Attachment();
+                    att.setType("picture");
+                    att.setSentBy(thisClient.profile.getId());
+                    att.setAttachmentID(pic.getId());
+                    attdao.addAttachment(att);
+                    System.out.println("ATT ID IS " + att.getId());
+                    return "ok:" + att.getId();
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return "error";
+                }
+
             default:
                 return ("wtf " + cmd);
         }
         return "wtf " + cmd;
     }
 
-    private byte[] buf = new byte[1024 * 1024];
+    private byte[] buf = new byte[1024 * 1024 * 1024];
     private int buf_len;
+
+    private byte[] receiveClientBinaryRequest() throws IOException {
+        buf_len = inputs.readInt();
+        inputs.readFully(buf, 0, buf_len);
+        return Arrays.copyOfRange(buf, 0, buf_len);
+    }
 
     private String receiveClientRequest() throws IOException {
         buf_len = inputs.readInt();
         inputs.readFully(buf, 0, buf_len);
         return new String(buf, 0, buf_len);
     }
+
 
     private void sendStringAnswerToClient(String answer) throws IOException {
         outputs.writeInt(answer.getBytes().length);
@@ -409,8 +452,9 @@ public class ClientThread implements Runnable {
                     if (ans != null) sendStringAnswerToClient(ans);
 
                     //outputs.writeUTF(ans);
-                    System.out.println("[LOG] " + thisClient.nickname + " said " + cmd + "(" + param + "), reply: " + ans);
-
+                    if (!cmd.equals("ls") && !cmd.equals("status")) {
+                        System.out.println("[LOG] " + thisClient.nickname + " said " + cmd + "(" + param + "), reply: " + ans);
+                    }
                 }
 
             } catch (java.io.IOException ioex) {
