@@ -376,7 +376,7 @@ public class ClientThread implements Runnable {
         return "wtf " + cmd;
     }
 
-    private byte[] buf = new byte[1024 * 1024 * 1024];
+    private byte[] buf = new byte[8 * 1024 * 1024];
     private int buf_len;
 
     private byte[] receiveClientBinaryRequest() throws IOException {
