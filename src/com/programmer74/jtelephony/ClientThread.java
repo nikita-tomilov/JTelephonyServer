@@ -27,6 +27,7 @@ public class ClientThread implements Runnable {
     private AttachmentsDAO attdao;
     private DocumentsDAO docdao;
     private PicturesDAO picdao;
+    private ActiveTokenDAO actdao;
 
     //HashMap<String, OnlineClientInfo> clients = new HashMap<>();
     Map<Integer, OnlineClientInfo> clients = null;
@@ -48,6 +49,7 @@ public class ClientThread implements Runnable {
         this.attdao = new AttachmentsDAO();
         this.docdao = new DocumentsDAO();
         this.picdao = new PicturesDAO();
+        this.actdao = new ActiveTokenDAO();
     }
 
     private String parseCommandAndGetAnswer(OnlineClientInfo thisClient, String cmd, String param) {
@@ -73,7 +75,23 @@ public class ClientThread implements Runnable {
 
                 String passhash_real = crd.getPasswordHash();
                 LoginHistory lh = new LoginHistory(crd.getId(), new Date(), "fail");
-                if (passhash_given.equals(passhash_real)) {
+
+                boolean isTokenValid = false;
+                if (passhash_given.charAt(0) == '-') {
+                    String tokenString = passhash_given.substring(1);
+                    try {
+                        ActiveToken token = actdao.getTokenByTokenString(tokenString);
+                        if (token != null) {
+                            isTokenValid = (token.getCredentialID().equals(crd.getId())) && (!token.getToken().getExpiresAt().before(new Date()));
+                        }
+                    } catch (Exception ex) {
+                        //fail the check
+                        isTokenValid = false;
+                        passhash_given = "";
+                    }
+                }
+
+                if (passhash_given.equals(passhash_real) || isTokenValid) {
                     thisClient.nickname = crd.getUsername();
                     thisClient.credential = crd;
                     thisClient.profile = prf;
@@ -367,6 +385,23 @@ public class ClientThread implements Runnable {
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                    return "error";
+                }
+            case "gettoken":
+                String tokenStr = (thisClient.nickname + new Date().toString());
+                tokenStr = Utils.stringToMD5(tokenStr);
+
+                Date date = new Date();
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(date);
+                cal.add(Calendar.MONTH, 6);
+
+                Date expirationDate = cal.getTime();
+
+                try {
+                    actdao.registerActiveToken(tokenStr, thisClient.credential.getId(), expirationDate);
+                    return tokenStr;
+                } catch (Exception ex) {
                     return "error";
                 }
 
