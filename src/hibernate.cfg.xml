@@ -28,7 +28,8 @@
         <mapping class="com.programmer74.jtdb.Attachment"></mapping>
         <mapping class="com.programmer74.jtdb.Picture"></mapping>
         <mapping class="com.programmer74.jtdb.Document"></mapping>
-        <!--TODO: Tokens -->
+        <mapping class="com.programmer74.jtdb.ActiveToken"></mapping>
+        <mapping class="com.programmer74.jtdb.Token"></mapping>
 
     </session-factory>
 </hibernate-configuration>
