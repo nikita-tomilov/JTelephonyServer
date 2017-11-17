@@ -387,6 +387,25 @@ public class ClientThread implements Runnable {
                     ex.printStackTrace();
                     return "error";
                 }
+            case "senddoc":
+                try {
+                    Document doc = new Document();
+                    doc.setPath(param);
+                    doc.setSentBy(thisClient.profile.getId());
+                    docdao.addDocument(doc);
+                    System.out.println("DOC ID IS " + doc.getId());
+                    Attachment att = new Attachment();
+                    att.setType("document");
+                    att.setSentBy(thisClient.profile.getId());
+                    att.setAttachmentID(doc.getId());
+                    attdao.addAttachment(att);
+                    System.out.println("ATT ID IS " + att.getId());
+                    return "ok:" + att.getId();
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return "error";
+                }
             case "gettoken":
                 String tokenStr = (thisClient.nickname + new Date().toString());
                 tokenStr = Utils.stringToMD5(tokenStr);

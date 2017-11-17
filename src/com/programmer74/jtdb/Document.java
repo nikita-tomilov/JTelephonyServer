@@ -19,11 +19,15 @@ public class Document {
     @Column
     private String Path;
 
+    @Column
+    private Integer SentBy;
+
     @Override
     public String toString() {
         return "Document{" +
                 "id=" + id +
                 ", Path='" + Path + '\'' +
+                ", SentBy=" + SentBy +
                 '}';
     }
 
@@ -41,5 +45,13 @@ public class Document {
 
     public void setPath(String path) {
         Path = path;
+    }
+
+    public Integer getSentBy() {
+        return SentBy;
+    }
+
+    public void setSentBy(Integer sentBy) {
+        SentBy = sentBy;
     }
 }
