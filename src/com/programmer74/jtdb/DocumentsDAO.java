@@ -6,6 +6,7 @@ import org.hibernate.annotations.SourceType;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 
+import javax.print.Doc;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -36,6 +37,12 @@ public class DocumentsDAO {
 
             session.save(Document);
             session.getTransaction().commit();
+            //session.flush();
+
+            session.close();
+            session = HibernateUtil.getSessionFactory().openSession();
+            Document = (Document) (session.createCriteria(Document.class).add(Restrictions.eq("SentBy", Document.getSentBy())).addOrder(Order.desc("id")).list().get(0));
+
         }catch (Exception e){
             //e.printStackTrace();
             throw e;
