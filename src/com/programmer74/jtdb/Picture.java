@@ -3,6 +3,7 @@ package com.programmer74.jtdb;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -10,6 +11,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 @Entity
+@org.hibernate.annotations.Cache(region="common", usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name="Pictures")
 public class Picture {
     @Column
