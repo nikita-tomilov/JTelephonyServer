@@ -3,6 +3,7 @@ package com.programmer74.jtdb;
 import oracle.sql.STRUCT;
 import oracle.sql.StructDescriptor;
 import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.usertype.UserType;
 
 import java.io.Serializable;
@@ -37,12 +38,9 @@ public class TokenUserType implements UserType, Serializable{
     }
 
     @Override
-    public Object nullSafeGet(ResultSet rs, String[] names, org.hibernate.engine.spi.SharedSessionContractImplementor session,
-                              Object owner)
-            throws HibernateException, SQLException {
-
-        final Struct struct = (Struct) rs.getObject(names[0]);
-        if (rs.wasNull()) return null;
+    public Object nullSafeGet(ResultSet resultSet, String[] strings, SessionImplementor sessionImplementor, Object o) throws HibernateException, SQLException {
+        final Struct struct = (Struct) resultSet.getObject(strings[0]);
+        if (resultSet.wasNull()) return null;
 
         final Token Token = new Token();
 
@@ -51,19 +49,16 @@ public class TokenUserType implements UserType, Serializable{
         return Token;
     }
 
-    /*public void nullSafeSet(java.sql.PreparedStatement st, java.lang.Object value, int index),
-                            org.hibernate.engine.spi.SessionImplementor session)*/
     @Override
-    public void nullSafeSet(PreparedStatement st, Object value, int index, org.hibernate.engine.spi.SharedSessionContractImplementor session)
-            throws HibernateException, SQLException {
-         if (value == null) st.setNull(index, SQL_TYPE, DB_OBJEXT_TYPE);
+    public void nullSafeSet(PreparedStatement preparedStatement, Object o, int i, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
+        if (o == null) preparedStatement.setNull(i, SQL_TYPE, DB_OBJEXT_TYPE);
         else {
-            final Token Token = (Token) value;
+            final Token Token = (Token) o;
             final Object[] values = new Object[] {Token.getTokenString(), Token.getExpiresAt()};
-            final Connection connection = st.getConnection();
+            final Connection connection = preparedStatement.getConnection();
             final STRUCT struct = new STRUCT(StructDescriptor.createDescriptor(DB_OBJEXT_TYPE, connection),
                     connection, values);
-            st.setObject(index, struct, SQL_TYPE);
+            preparedStatement.setObject(i, struct, SQL_TYPE);
 
         }
     }

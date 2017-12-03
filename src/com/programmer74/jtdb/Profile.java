@@ -3,13 +3,17 @@ package com.programmer74.jtdb;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Cache;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @Entity
+@Cache(region="common", usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name="profiles")
-public class Profile {
+public class Profile implements Serializable{
     @Override
     public String toString() {
         return "Profile{" +

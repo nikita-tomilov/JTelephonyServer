@@ -1,10 +1,12 @@
 package com.programmer74.jtdb;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 
 @Entity
+@org.hibernate.annotations.Cache(region="common", usage = CacheConcurrencyStrategy.READ_WRITE)
 @Table(name="credentials")
 public class Credential {
     @Override

@@ -3,6 +3,7 @@ package com.programmer74.jtdb;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -10,6 +11,7 @@ import java.util.Date;
 
 @Entity
 @Table(name="messages")
+@org.hibernate.annotations.Cache(region="common", usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY, generator="msg_increment")
