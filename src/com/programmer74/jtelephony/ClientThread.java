@@ -82,7 +82,7 @@ public class ClientThread implements Runnable {
                     try {
                         ActiveToken token = actdao.getTokenByTokenString(tokenString);
                         if (token != null) {
-                            isTokenValid = (token.getCredentialID().equals(crd.getId())) && (!token.getToken().getExpiresAt().before(new Date()));
+                            isTokenValid = (token.getCredentialID().equals(crd.getId())) && (!token.getExpiresAt().before(new Date()));
                         }
                     } catch (Exception ex) {
                         //fail the check
