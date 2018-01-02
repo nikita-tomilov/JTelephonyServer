@@ -25,7 +25,6 @@ public class ProfilesDAO {
                 session.close();
             }
         }
-        System.out.println(Profiles.isEmpty());
         return Profiles;
     }
     public void addProfile(Profile profile) throws Exception {
