@@ -38,5 +38,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="com.github.hibernate-redis:hibernate-redis:1.6.8" level="project" />
+    <orderEntry type="library" name="org.postgresql:postgresql:42.1.4" level="project" />
   </component>
 </module>
