@@ -266,13 +266,17 @@ public class ClientThread implements Runnable {
                 return all;
 
             case "ls":
-                all = thisClient.nickname + ";";
+                all = "+" + thisClient.nickname + ";";
                 try {
                     List<Contact> conlist = condao.getApprovedContactsForProfile(thisClient.profile.getId());
                     for (Contact contact : conlist) {
                         Profile p = prfdao.getProfileByID(contact.getFromID().equals(thisClient.profile.getId()) ? contact.getToID() : contact.getFromID());
                         Credential c = crdao.getCredentialByID(p.getCredentialsID());
-                        all += c.getUsername() + ";";
+                        if (p.getStatus().equals("online")) {
+                            all += "+" + c.getUsername() + ";";
+                        } else {
+                            all += "-" + c.getUsername() + ";";
+                        }
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
